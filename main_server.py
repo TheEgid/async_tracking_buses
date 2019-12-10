@@ -1,7 +1,8 @@
 import json
+
 import trio
 from trio_websocket import serve_websocket, ConnectionClosed
-from helpers import open_chrome_browser
+
 
 # MSG = {
 #   "msgType": "Buses",
@@ -52,7 +53,7 @@ async def start():
 
 
 def main():
-    open_chrome_browser()
+    #open_chrome_browser()
     trio.run(start)
 
 
