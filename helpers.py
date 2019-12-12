@@ -1,6 +1,19 @@
 import os
 import platform
 import webbrowser
+from dataclasses import dataclass
+
+
+PAUSE_DUR = 0.1
+BUSES = {}
+
+
+@dataclass
+class Bus:
+    busId: int
+    lat: float
+    lng: float
+    route: str
 
 
 def open_chrome_browser():

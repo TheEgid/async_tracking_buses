@@ -1,8 +1,9 @@
 import json
 import os
+import sys
 from functools import partial
-from sys import stderr
 
+import helpers
 import trio
 from trio_websocket import open_websocket_url
 
@@ -15,30 +16,26 @@ def load_routes(directory_path='routes'):
                 yield json.load(file)
 
 
-def serialize_route(raw_route):
-    coordinates = raw_route["coordinates"]
-    name = raw_route['name']
-    dots = [
-        {
-            "busId": name,
-            "lat": coordinate[0],
-            "lng": coordinate[1],
-            "route": name
-        }
-        for coordinate in coordinates
-    ]
-    return [{"msgType": "Buses", "buses": [dot]} for dot in dots]
-
-
 async def run_bus(url, bus_id=None, route=None):
-    try:
-        async with open_websocket_url(url) as ws:
-            for serialized_route in serialize_route(route):
-                await ws.send_message(json.dumps(serialized_route,
-                                                 ensure_ascii=True))
-                await trio.sleep(1)
-    except OSError as ose:
-        print('Connection attempt failed: %s' % ose, file=stderr)
+    while True:
+        bus_coordinates = route['coordinates']
+        for bus_coordinate in bus_coordinates:
+            try:
+                async with open_websocket_url(url) as ws:
+                    lat, lng = bus_coordinate
+                    await ws.send_message(
+                        json.dumps(
+                            {
+                                "busId": route['name'],
+                                "lat": lat,
+                                "lng": lng,
+                                "route": route['name']
+                            },
+                            ensure_ascii=False)
+                    )
+                    await trio.sleep(helpers.PAUSE_DUR)
+            except OSError as ose:
+                   print('Connection attempt failed: %s' % ose, file=sys.stderr)
 
 
 async def start_buses():
