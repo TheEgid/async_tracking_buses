@@ -1,10 +1,12 @@
+import logging
 import os
 import platform
+import random
+import time
 import webbrowser
 from dataclasses import dataclass
 
-
-PAUSE_DUR = 0.1
+PAUSE_DUR = 1.5
 BUSES = {}
 
 
@@ -28,3 +30,22 @@ def open_chrome_browser():
     webbrowser.register('Chrome', None, webbrowser.BackgroundBrowser(chrome_path))
     link_path = os.path.join(os.getcwd(), 'index.html')
     webbrowser.get(chrome_path).open(link_path)
+
+
+def generate_unical_hash(_lon=6):
+    def has_letters(_):
+        return any(symbol.isalpha() for symbol in _)
+    offset = random.randint(100, 400)
+    while has_letters('{0:010x}'.format(int(time.time() * offset))[:_lon]):
+        return '{0:010x}'.format(int(time.time() * offset))[:_lon]
+    else:
+        return generate_unical_hash()
+
+
+def install_logs_parameters(logs=False):
+    global broadcast_logger
+    str_format = '%(asctime)s\t %(filename)s %(message)s'
+    date_format = '%d-%b-%y %H:%M:%S'
+    logging.basicConfig(format=str_format, datefmt=date_format,level=logging.INFO)
+    broadcast_logger = logging.getLogger()
+    return broadcast_logger
