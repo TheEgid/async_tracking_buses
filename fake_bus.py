@@ -6,21 +6,16 @@ from functools import partial
 
 import helpers
 import trio
-from helpers import generate_unical_hash, install_logs_parameters
+from helpers import install_logs_parameters
 from trio_websocket import open_websocket_url
 
 
-def generate_bus_id(route_id):
-    _hash = generate_unical_hash()
-    return f"{route_id}-{_hash}"
-
-
-def get_serialized_bus_info(route):
+def get_serialized_bus_info(route, bus_id):
     coordinates = route['coordinates']
     start_offset = coordinates.index(random.choice(list(coordinates)))
     bus_coordinates = coordinates[start_offset:]
+    bus_id = f"{bus_id} {route['name']}"
     for bus_coordinate in bus_coordinates:
-        bus_id = generate_bus_id(route['name'])
         lat, lng = bus_coordinate
         yield json.dumps({"busId": bus_id,
                           "lat": lat,
@@ -38,44 +33,47 @@ def load_routes(directory_path='routes'):
                 yield json.load(file)
 
 
-async def run_bus(url, route):
+async def run_bus(url, route, bus_id):
     while True:
-        for serialized_bus_info in get_serialized_bus_info(route):
+        for serialized_bus_info in get_serialized_bus_info(route, bus_id):
             try:
                 async with open_websocket_url(url) as ws:
                     broadcast_logger.info(f'{serialized_bus_info}')
                     await ws.send_message(serialized_bus_info)
                     await trio.sleep(helpers.PAUSE_DUR)
             except OSError as ose:
-                   print('Connection attempt failed: %s' % ose, file=sys.stderr)
+                print('Connection attempt failed: %s' % ose, file=sys.stderr)
 
 
-async def transponder(url, receive_channel):
+async def transponder(url, bus_id, receive_channel):
     async with trio.open_nursery() as nursery:
         async for value in receive_channel:
             raw_route = dict(value)
-            handler = partial(run_bus, url=url, route=raw_route)
+            handler = partial(run_bus, url=url, route=raw_route, bus_id=bus_id)
             nursery.start_soon(handler)
             await trio.sleep(random.random())
 
 
-async def send_updates(send_channel):
-    for _buses_qty in range(2):  # 5, random.randint(7, 10)):
-        for raw_route in load_routes():
-            await send_channel.send(raw_route)
+async def send_updates(url, all_channels):
+        async with trio.open_nursery() as nursery:
+            for raw_route in load_routes():
+                for _buses_qty in range(2):
+                    randomized_channels = random.sample(range(len(all_channels)), 15)
+                    current_channel = randomized_channels[0] #### TODO
+                    send_channel, receive_channel = all_channels[current_channel]
+                    bus_id = _buses_qty
+                    nursery.start_soon(transponder, url, bus_id, receive_channel)
+                    await send_channel.send(raw_route)
 
 
 async def start_buses():
-    channel_qty = 10
-    all_channels = list()
+    possible_channels_qty = 50
+    all_channels = {}
     url = 'ws://127.0.0.1:8080/ws'
+    for id, free_open_memory_channel in enumerate(range(possible_channels_qty)):
+        all_channels[id] = trio.open_memory_channel(0)
     async with trio.open_nursery() as nursery:
-        for free_open_memory_channel in range(channel_qty):
-            all_channels.append([trio.open_memory_channel(0)])
-        for all_channel in all_channels:
-            send_channel, receive_channel = all_channel[0]
-            nursery.start_soon(send_updates, send_channel)
-            nursery.start_soon(transponder, url, receive_channel)
+        nursery.start_soon(send_updates, url, all_channels)
 
 
 def main():

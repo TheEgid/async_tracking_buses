@@ -45,7 +45,7 @@ async def input_handle_server(request):
                                   f'number of buses '
                                   f'{len(helpers.BUSES_COUNTER)}')
 
-            if load_testing and len(helpers.BUSES_COUNTER) >= 300:
+            if len(helpers.BUSES_COUNTER) >= maximum_buses_qty:
                 exit(0)
 
         except (ConnectionClosed, ConnectionRejected):
@@ -54,9 +54,9 @@ async def input_handle_server(request):
 
 async def main():
     global broadcast_logger
-    global load_testing
+    global maximum_buses_qty
     broadcast_logger = install_logs_parameters(True)
-    load_testing = True
+    maximum_buses_qty = 20000
 
     async with trio.open_nursery() as nursery:
         nursery.start_soon(serve_websocket, input_handle_server, '127.0.0.1', 8080, None)
