@@ -17,13 +17,11 @@ async def output_to_browser(ws):
                 "lng": bus.lng,
                 "route": bus.route
             } for bus in helpers.BUSES.values()]}
-    for output_bus in output_buses_info["buses"]:
-        logger_info = f'{output_bus["busId"]}'
-        broadcast_logger.info(logger_info)
     await ws.send_message(json.dumps(output_buses_info))
 
 
 async def talk_to_browser(request):
+    global buses_counter
     ws = await request.accept()
     while True:
         try:
@@ -39,16 +37,27 @@ async def input_handle_server(request):
         try:
             raw_response = await ws.get_message()
             input_bus_info = json.loads(raw_response)
-            #broadcast_logger.info(f'{input_bus_info=}')
             bus = Bus(**input_bus_info)
             helpers.BUSES.update({bus.busId: bus})
+
+            helpers.BUSES_COUNTER.add(input_bus_info['busId'])
+            broadcast_logger.info(f'{input_bus_info=} '
+                                  f'number of buses '
+                                  f'{len(helpers.BUSES_COUNTER)}')
+
+            if load_testing and len(helpers.BUSES_COUNTER) >= 300:
+                exit(0)
+
         except (ConnectionClosed, ConnectionRejected):
             break
 
 
 async def main():
     global broadcast_logger
+    global load_testing
     broadcast_logger = install_logs_parameters(True)
+    load_testing = True
+
     async with trio.open_nursery() as nursery:
         nursery.start_soon(serve_websocket, input_handle_server, '127.0.0.1', 8080, None)
         nursery.start_soon(serve_websocket, talk_to_browser, '127.0.0.1', 8000, None)

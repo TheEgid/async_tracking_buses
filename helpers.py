@@ -7,7 +7,8 @@ import webbrowser
 from dataclasses import dataclass
 
 PAUSE_DUR = 1.5
-BUSES = {}
+BUSES = {}  # TODO rename
+BUSES_COUNTER = set()
 
 
 @dataclass
