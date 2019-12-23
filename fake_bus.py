@@ -58,8 +58,7 @@ async def send_updates(url, all_channels):
         async with trio.open_nursery() as nursery:
             for raw_route in load_routes():
                 for _buses_qty in range(2):
-                    randomized_channels = random.sample(range(len(all_channels)), 15)
-                    current_channel = randomized_channels[0] #### TODO
+                    current_channel = random.choice(list(all_channels))
                     send_channel, receive_channel = all_channels[current_channel]
                     bus_id = _buses_qty
                     nursery.start_soon(transponder, url, bus_id, receive_channel)
