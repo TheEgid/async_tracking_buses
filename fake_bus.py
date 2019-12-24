@@ -6,7 +6,6 @@ from functools import partial
 from trio_websocket import open_websocket_url
 import trio
 from helpers import install_logs_parameters
-import helpers
 import settings
 
 
@@ -75,20 +74,17 @@ async def start_buses():
 
 
 def get_args_parser():
-    formatter_class = argparse.ArgumentDefaultsHelpFormatter
-    parser = argparse.ArgumentParser(formatter_class=formatter_class)
-	
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-server', default=settings.SERVER)
     parser.add_argument('-routes_number', type=int, default=settings.ROUTES_NUMBER)
     parser.add_argument('-buses_per_route', type=int, default=settings.BUSES_PER_ROUTE)
     parser.add_argument('-websockets_number', type=int, default=settings.WEBSOCKETS_NUMBER)
-	parser.add_argument('-emulator_id', default=settings.EMULATOR_ID)
+    parser.add_argument('-emulator_id', default=settings.EMULATOR_ID)
     parser.add_argument('-refresh_timeout', type=int, default=settings.REFRESH_TIMEOUT)	
-    parser.add_argument('-v', action='store_true', default=settings.V, 
-						help='check logs')
+    parser.add_argument('-v', action='store_true', default=settings.V, help='check logs')
     return parser        
 
-
+#https://proglib.io/p/go-vs-python
 def main():
     global broadcast_logger
     broadcast_logger = install_logs_parameters(True)
