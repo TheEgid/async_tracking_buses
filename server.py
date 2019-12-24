@@ -26,7 +26,7 @@ async def talk_to_browser(request):
     while True:
         try:
             await output_to_browser(ws)
-            await trio.sleep(helpers.PAUSE_DUR)
+            await trio.sleep(2) #helpers.PAUSE_DUR
         except (ConnectionClosed, ConnectionRejected):
             break
 

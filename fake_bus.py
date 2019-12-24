@@ -5,6 +5,7 @@ import sys
 from functools import partial
 from trio_websocket import open_websocket_url
 import trio
+import argparse
 from helpers import install_logs_parameters
 import settings
 
@@ -25,7 +26,9 @@ def get_serialized_bus_info(route, bus_id):
 
 
 def load_routes(directory_path='routes'):
-    for filename in os.listdir(directory_path):
+    all_routes = os.listdir(directory_path)
+    chosen_routes = all_routes[:args.routes_number]
+    for filename in chosen_routes:
         if filename.endswith(".json"):
             filepath = os.path.join(directory_path, filename)
             with open(filepath, 'r', encoding='utf8') as file:
@@ -59,7 +62,7 @@ async def send_updates(url, all_channels):
                 for bus_per_route in range(args.buses_per_route):
                     current_channel = random.choice(list(all_channels))
                     send_channel, receive_channel = all_channels[current_channel]
-                    bus_id = _buses_qty
+                    bus_id = bus_per_route
                     nursery.start_soon(transponder, url, bus_id, receive_channel)
                     await send_channel.send(raw_route)
 
@@ -67,8 +70,9 @@ async def send_updates(url, all_channels):
 async def start_buses():
     all_channels = {}
     url = args.server
-    for id, free_open_memory_channel in enumerate(range(args.websockets_number)):
-        all_channels[id] = trio.open_memory_channel(0)
+    for key, free_open_memory_channel \
+            in enumerate(range(args.websockets_number)):
+        all_channels[key] = trio.open_memory_channel(0)
     async with trio.open_nursery() as nursery:
         nursery.start_soon(send_updates, url, all_channels)
 
@@ -76,20 +80,25 @@ async def start_buses():
 def get_args_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-server', default=settings.SERVER)
-    parser.add_argument('-routes_number', type=int, default=settings.ROUTES_NUMBER)
-    parser.add_argument('-buses_per_route', type=int, default=settings.BUSES_PER_ROUTE)
-    parser.add_argument('-websockets_number', type=int, default=settings.WEBSOCKETS_NUMBER)
-    parser.add_argument('-emulator_id', default=settings.EMULATOR_ID)
-    parser.add_argument('-refresh_timeout', type=int, default=settings.REFRESH_TIMEOUT)	
-    parser.add_argument('-v', action='store_true', default=settings.V, help='check logs')
+    parser.add_argument('-routes_number', type=int,
+                        default=settings.ROUTES_NUMBER)
+    parser.add_argument('-buses_per_route', type=int,
+                        default=settings.BUSES_PER_ROUTE)
+    parser.add_argument('-websockets_number', type=int,
+                        default=settings.WEBSOCKETS_NUMBER)
+    parser.add_argument('-emulator_id',
+                        default=settings.EMULATOR_ID)
+    parser.add_argument('-refresh_timeout', type=int,
+                        default=settings.REFRESH_TIMEOUT)
+    parser.add_argument('-v', action='store_true',
+                        default=settings.V, help='info logs on')
     return parser        
 
-#https://proglib.io/p/go-vs-python
+
 def main():
-    global broadcast_logger
-    broadcast_logger = install_logs_parameters(True)
-    
+    global broadcast_logger, args
     args = get_args_parser().parse_args()
+    broadcast_logger = install_logs_parameters(args.v)
     trio.run(start_buses)
 
 

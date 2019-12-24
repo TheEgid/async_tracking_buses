@@ -4,10 +4,15 @@ import platform
 import webbrowser
 from dataclasses import dataclass
 
-PAUSE_DUR = 1.5
-BUSES = {}  # TODO rename
+BUSES = {}
 BUSES_COUNTER = set()
 
+
+# x1, y1, x2, y2, x, y = [int(input()) for i in range(6)]
+# if x2 >= x >= x1 and y2 <= y <= y1:
+#     print('Точка принадлежит прямоугольнику')
+# else:
+#     print('Точка не принадлежит прямоугольнику')
 
 @dataclass
 class Bus:
@@ -32,9 +37,11 @@ def open_chrome_browser():
 
 
 def install_logs_parameters(logs=False):
-    global broadcast_logger
+    level = logging.CRITICAL
+    if logs:
+        level = logging.INFO
     str_format = '%(asctime)s\t %(filename)s %(message)s'
     date_format = '%d-%b-%y %H:%M:%S'
-    logging.basicConfig(format=str_format, datefmt=date_format,level=logging.INFO)
+    logging.basicConfig(format=str_format, datefmt=date_format, level=level)
     broadcast_logger = logging.getLogger()
     return broadcast_logger
