@@ -1,0 +1,72 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": [
+    "msgType",
+    "data"
+  ],
+  "properties": {
+    "msgType": {
+      "$id": "#/properties/msgType",
+      "type": "string",
+      "title": "The Msgtype Schema",
+      "default": "",
+      "examples": [
+        "newBounds"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "data": {
+      "$id": "#/properties/data",
+      "type": "object",
+      "title": "The Data Schema",
+      "required": [
+        "south_lat",
+        "north_lat",
+        "west_lng",
+        "east_lng"
+      ],
+      "properties": {
+        "south_lat": {
+          "$id": "#/properties/data/properties/south_lat",
+          "type": "number",
+          "title": "The South_lat Schema",
+          "default": 0.0,
+          "examples": [
+            55.723484846202176
+          ]
+        },
+        "north_lat": {
+          "$id": "#/properties/data/properties/north_lat",
+          "type": "number",
+          "title": "The North_lat Schema",
+          "default": 0.0,
+          "examples": [
+            55.757355618535996
+          ]
+        },
+        "west_lng": {
+          "$id": "#/properties/data/properties/west_lng",
+          "type": "number",
+          "title": "The West_lng Schema",
+          "default": 0.0,
+          "examples": [
+            37.52217292785645
+          ]
+        },
+        "east_lng": {
+          "$id": "#/properties/data/properties/east_lng",
+          "type": "number",
+          "title": "The East_lng Schema",
+          "default": 0.0,
+          "examples": [
+            37.65400886535645
+          ]
+        }
+      }
+    }
+  }
+}
