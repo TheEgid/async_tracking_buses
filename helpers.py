@@ -7,6 +7,9 @@ from dataclasses import dataclass
 BUSES = {}
 BUSES_COUNTER = set()
 
+conn_attempt = 0
+broadcast_logger = None
+_args = None
 
 # x1, y1, x2, y2, x, y = [int(input()) for i in range(6)]
 # if x2 >= x >= x1 and y2 <= y <= y1:
