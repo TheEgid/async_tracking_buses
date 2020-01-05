@@ -10,18 +10,20 @@ from trio_websocket import serve_websocket
 
 
 async def output_to_browser(ws):
-    bi = set()
+    outputed_buses = set()
     try:
-        buses_is_inside = [bus for bus_id, bus in helpers.BUSES.items()
-                        if is_inside(helpers.WINDOWS_BOUNDS, bus.lat, bus.lng)]
+        buses_is_inside = \
+            [bus for bus_id, bus in helpers.BUSES.items() if
+             is_inside(helpers.WINDOWS_BOUNDS, bus.lat, bus.lng)]
 
         output_buses_info = {"msgType": "Buses", "buses": [
-            {"busId": bus.busId,
-             "lat": bus.lat, "lng": bus.lng, "route": bus.route}
+            {"busId": bus.busId, "lat": bus.lat, "lng": bus.lng,
+             "route": bus.route}
             for bus in buses_is_inside]}
-        [bi.add(bus.busId) for bus in buses_is_inside]
-        helpers.server_logger.info(f'buses on bounds: {bi}')
-        helpers.server_logger.info(f'buses on bounds: {len(buses_is_inside)}')
+
+        [outputed_buses.add(bus.busId) for bus in buses_is_inside]
+
+        helpers.server_logger.info(f'buses on bounds: {len(outputed_buses)}')
         await ws.send_message(json.dumps(output_buses_info))
         await trio.sleep(0.2)
     except KeyError:

@@ -1,5 +1,6 @@
 import argparse
 import functools
+import itertools
 import json
 import os
 import random
@@ -15,9 +16,11 @@ from trio_websocket import open_websocket_url
 def get_serialized_bus_info(route, bus_id):
     coordinates = route['coordinates']
     start_offset = coordinates.index(random.choice(list(coordinates)))
-    bus_coordinates = coordinates[start_offset:]
-    bus_id = f"{bus_id} {route['name']}"
-    for bus_coordinate in bus_coordinates:
+    # endless cycle with offset
+    route_chain = itertools.chain(coordinates[start_offset:],
+                                  coordinates[::-1])
+    bus_id = f"r{route['name']}/id{bus_id}/o{start_offset}"
+    for bus_coordinate in itertools.cycle(route_chain):
         lat, lng = bus_coordinate
         yield json.dumps({"busId": bus_id,
                           "lat": lat,
@@ -83,13 +86,16 @@ def relaunch_on_disconnect(async_function):
 @relaunch_on_disconnect
 async def send_updates(url, all_channels):
     async with trio.open_nursery() as nursery:
+        # for bus_per_route in range(helpers._args.buses_per_route):
+        #     print('f')
         for raw_route in load_routes():
-            for bus_per_route in range(helpers._args.buses_per_route):
-                current_channel = random.choice(list(all_channels))
-                send_channel, receive_channel = all_channels[current_channel]
-                bus_id = bus_per_route
-                nursery.start_soon(transponder, url, bus_id, receive_channel)
-                await send_channel.send(raw_route)
+            #print(len(raw_route))
+
+            current_channel = random.choice(list(all_channels))
+            send_channel, receive_channel = all_channels[current_channel]
+            bus_id = "tt"
+            nursery.start_soon(transponder, url, bus_id, receive_channel)
+            await send_channel.send(raw_route)
 
 
 async def start_buses():
