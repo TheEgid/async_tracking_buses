@@ -71,10 +71,8 @@ async def handle_server(request):
         try:
             raw_response = await ws.get_message()
             input_bus_info = json.loads(raw_response)
-
             bus = Bus(**input_bus_info)
             helpers.BUSES.update({bus.busId: bus})
-
         except (ConnectionClosed, ConnectionRejected):
             break
 
