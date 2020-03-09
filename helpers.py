@@ -1,8 +1,8 @@
 import json
 import logging
 from dataclasses import dataclass
-
 import jsonschema
+
 
 BUSES = {}
 WINDOWS_BOUNDS = {}
@@ -11,8 +11,6 @@ json_schema = None
 conn_attempt = 0
 broadcast_logger = None
 server_logger = None
-_args = None
-
 
 @dataclass
 class Bus:

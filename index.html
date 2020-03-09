@@ -74,19 +74,19 @@
         constructor() {
           super('WebsocketClosed');
         }
-    };
+    }
 
     async function waitTillSocketOpen(webSocket){
       return new Promise((resolve, reject) => {
         const onSocketClose = ()=>{
           reject(new WebsocketClosed());
           webSocket.removeEventListener('open', onWebsocketOpen);
-        }
+        };
 
         const onWebsocketOpen = event => {
           resolve();
           webSocket.removeEventListener('close', onSocketClose);
-        }
+        };
         webSocket.addEventListener('close', onSocketClose);
         webSocket.addEventListener('open', onWebsocketOpen);
       });
@@ -97,12 +97,12 @@
         const onSocketClose = ()=>{
           reject(new WebsocketClosed());
           webSocket.removeEventListener('message', onMsgReceive);
-        }
+        };
 
         const onMsgReceive = event => {
           resolve(event.data);
           webSocket.removeEventListener('close', onSocketClose);
-        }
+        };
         webSocket.addEventListener('close', onSocketClose);
         webSocket.addEventListener('message', onMsgReceive);
       });
@@ -137,13 +137,13 @@
         {
           click: function(event)
           {
-            if (event.target.name == 'debug'){
+            if (event.target.name === 'debug'){
               log.setLevel(event.target.checked && 'debug' || 'warn');
             }
 
-            if (event.target.id == 'save-btn'){
+            if (event.target.id === 'save-btn'){
               const newWebsocketAddress = document.getElementsByName("address")[0].value;
-              localStorage.setItem('websocket', newWebsocketAddress)
+              localStorage.setItem('websocket', newWebsocketAddress);
               document.location.reload();
             }
           },
@@ -164,7 +164,7 @@
           borderColor: '#00ABDC',
           textColor: '#00ABDC',
       });
-      const marker = L.marker(latLng, { icon: icon })
+      const marker = L.marker(latLng, { icon: icon });
       marker.addTo(map);
       marker.bindPopup(`<p>Маршрут №<strong>${routeNumber}</strong>.<br/>Id автобуса ${busId}.</p>`);
       return marker;
@@ -227,7 +227,7 @@
           continue;
         }
 
-        if (msgData.msgType == 'Buses'){
+        if (msgData.msgType === 'Buses'){
           if (!validateServerUpdateMsg(msgData)){
             return;
           }
@@ -249,7 +249,7 @@
       const sendBoundsToServer = _.debounce(()=>{
         const newBounds = map.getBounds();
         sendBounds(socket, newBounds);
-      }, 100)
+      }, 100);
 
       map.on('zoomend moveend', sendBoundsToServer);
       sendBoundsToServer();
@@ -268,7 +268,7 @@
 
         } catch (error){
           if (error instanceof WebsocketClosed){
-            log.info('Connection lost. Try to reconnect in 1 sec.')
+            log.info('Connection lost. Try to reconnect in 1 sec.');
             await sleep(1000);
             continue;
           }

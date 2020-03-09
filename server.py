@@ -1,12 +1,10 @@
 import json
-
-import helpers
 import trio
-from helpers import Bus
-from helpers import install_logs_parameters, validate_input_json_data, \
-    get_json_schema
 from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
+from helpers import Bus, install_logs_parameters
+from helpers import validate_input_json_data, get_json_schema
+import helpers
 
 
 async def output_to_browser(ws):
@@ -79,7 +77,7 @@ async def handle_server(request):
 
 async def main():
     global maximum_buses_qty
-    maximum_buses_qty = 20000
+    maximum_buses_qty = 200
 
     helpers.json_schema = get_json_schema()
     helpers.server_logger = install_logs_parameters(True)
