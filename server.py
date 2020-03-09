@@ -2,9 +2,10 @@ import json
 import trio
 from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
-from helpers import Bus, install_logs_parameters
+from helpers import Bus, WindowBounds, install_logs_parameters
 from helpers import validate_input_json_data, get_json_schema
 import helpers
+import settings
 
 
 async def output_to_browser(ws):
@@ -12,7 +13,7 @@ async def output_to_browser(ws):
     try:
         buses_is_inside = \
             [bus for bus_id, bus in helpers.BUSES.items() if
-             is_inside(helpers.WINDOWS_BOUNDS, bus.lat, bus.lng)]
+             helpers.windows_bounds.is_inside(bus.lat, bus.lng)]
 
         output_buses_info = {"msgType": "Buses", "buses": [
             {"busId": bus.busId, "lat": bus.lat, "lng": bus.lng,
@@ -23,15 +24,9 @@ async def output_to_browser(ws):
 
         helpers.server_logger.info(f'buses on bounds: {len(outputed_buses)}')
         await ws.send_message(json.dumps(output_buses_info))
-        await trio.sleep(0.2)
-    except KeyError:
+        await trio.sleep(settings.REFRESH_TIMEOUT)
+    except (KeyError, AttributeError):
         pass
-
-
-def is_inside(bounds, lat, lng):
-    is_inside_lat = bounds['south_lat'] < lat < bounds['north_lat']
-    is_inside_lng = bounds['west_lng'] < lng < bounds['east_lng']
-    return all([is_inside_lat, is_inside_lng])
 
 
 async def handle_browser(request):
@@ -47,9 +42,10 @@ async def listen_browser(ws):
             listened = await ws.get_message()
             bounds = validate_input_json_data(json.loads(listened),
                                               helpers.json_schema)
+            bounds = WindowBounds(**bounds["data"])
             if bounds:
-                helpers.WINDOWS_BOUNDS.update(bounds['data'])
-            await trio.sleep(0.2)
+                helpers.windows_bounds = bounds
+            await trio.sleep(settings.REFRESH_TIMEOUT)
         except (ConnectionClosed, ConnectionRejected):
             break
 
@@ -58,7 +54,7 @@ async def talk_to_browser(ws):
     while True:
         try:
             await output_to_browser(ws)
-            await trio.sleep(0.2)           # helpers.PAUSE_DUR
+            await trio.sleep(settings.REFRESH_TIMEOUT)           # helpers.PAUSE_DUR
         except (ConnectionClosed, ConnectionRejected):
             break
 
@@ -76,15 +72,14 @@ async def handle_server(request):
 
 
 async def main():
-    global maximum_buses_qty
-    maximum_buses_qty = 200
-
     helpers.json_schema = get_json_schema()
     helpers.server_logger = install_logs_parameters(True)
 
     async with trio.open_nursery() as nursery:
-        nursery.start_soon(serve_websocket, handle_server, '127.0.0.1', 8080, None)
-        nursery.start_soon(serve_websocket, handle_browser, '127.0.0.1', 8000, None)
+        nursery.start_soon(serve_websocket, handle_server,
+                           '127.0.0.1', 8080, None)
+        nursery.start_soon(serve_websocket, handle_browser,
+                           '127.0.0.1', 8000, None)
 
 
 if __name__ == '__main__':

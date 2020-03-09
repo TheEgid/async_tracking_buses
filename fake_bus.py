@@ -14,7 +14,6 @@ from trio_websocket import open_websocket_url
 
 
 def get_serialized_bus_info(route, bus_id):
-
     coordinates = route['coordinates']
     start_offset = coordinates.index(random.choice(list(coordinates)))
     # endless cycle with offset
@@ -40,20 +39,22 @@ def load_routes(directory_path='routes'):
                 yield json.load(file)
 
 
-async def run_bus(url, route, bus_id):
+async def run_bus(send_channel, server_address, route, bus_id):
     first_run = True
     while True:
         if first_run:
             for serialized_bus_info in get_serialized_bus_info(route, bus_id):
                 try:
-                    async with open_websocket_url(url) as ws:
-                        # helpers.broadcast_logger.info(f'{serialized_bus_info}')
-                        if 'busId' in serialized_bus_info:  # Connection success
-                            helpers.conn_attempt = 0
-                        await ws.send_message(serialized_bus_info)
-                    await trio.sleep(_settings.refresh_timeout)
+                    async with open_websocket_url(server_address) as ws:
+                        async with send_channel:
+                            #helpers.broadcast_logger.info(f'{serialized_bus_info}')
+                            if 'busId' in serialized_bus_info:  # Connection success
+                                helpers.conn_attempt = 0
+                            await ws.send_message(serialized_bus_info)
+                        await trio.sleep(_settings.refresh_timeout)
                     first_run = False
-                except OSError as e:
+                except (OSError, HandshakeError) as e:
+                    first_run = True
                     helpers.broadcast_logger.info(f'Connection failed: {e}')
 
 
@@ -79,37 +80,36 @@ def relaunch_on_disconnect(async_function):
 
 
 @relaunch_on_disconnect
-async def send_updates(url, receive_channel):
-    async with open_websocket_url(url) as ws:
-        async for bus_json in receive_channel:
+async def send_updates(server_address, receive_channel):
+    async with open_websocket_url(server_address) as ws:
+        async for json_msg in receive_channel:
             await trio.sleep(_settings.refresh_timeout)
-            await ws.send_message(bus_json)
+            await ws.send_message(json_msg)
 
 
 async def start_buses():
     all_buses = 0
-    all_channels = {}
-    url = _settings.server
-    for key, free_open_memory_channel \
-            in enumerate(range(_settings.websockets_number)):
-        all_channels[key] = trio.open_memory_channel(0)
+    all_channels = []
+    server_address = _settings.server
+    for _ in range(_settings.websockets_number):
+        all_channels.append(trio.open_memory_channel(0))
 
     async with trio.open_nursery() as nursery:
 
-        for websocket in range(_settings.websockets_number):
-            current_channel = random.choice(list(all_channels))
-            send_channel, receive_channel = all_channels[current_channel]
-
-        nursery.start_soon(send_updates, url, receive_channel)
-
         for route in load_routes():
+            for websocket in range(_settings.websockets_number):
+                send_channel, receive_channel = random.choice(all_channels)
+
             for bus in range(_settings.buses_per_route):
                 all_buses += 1
                 bus_id = f'{all_buses} / {route["name"]}'
-                nursery.start_soon(run_bus, url, route, bus_id)
+
+                nursery.start_soon(run_bus, send_channel, server_address, route, bus_id)
                 helpers.broadcast_logger.info(f'{bus_id=}')
 
-        await trio.sleep(_settings.refresh_timeout)
+        nursery.start_soon(send_updates, server_address, receive_channel)
+
+        await trio.sleep(0)
 
 
 def get_args_parser():

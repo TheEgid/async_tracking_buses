@@ -5,12 +5,29 @@ import jsonschema
 
 
 BUSES = {}
-WINDOWS_BOUNDS = {}
+windows_bounds = None
 
 json_schema = None
 conn_attempt = 0
 broadcast_logger = None
 server_logger = None
+
+
+@dataclass
+class WindowBounds:
+    south_lat: float
+    north_lat: float
+    west_lng: float
+    east_lng: float
+
+    def is_inside(self, lat, lng):
+        is_inside_lat = self.south_lat < lat < self.north_lat
+        is_inside_lng = self.west_lng < lng < self.east_lng
+        return all([is_inside_lat, is_inside_lng])
+
+    def update(self, south_lat, north_lat, west_lng, east_lng):
+        pass
+
 
 @dataclass
 class Bus:
