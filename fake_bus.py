@@ -5,10 +5,10 @@ import json
 import trio
 import os
 import random
+from contextlib import suppress
 
 import helpers
-import settings
-from helpers import install_logs_parameters
+from helpers import install_logs_parameters, load_settings
 from trio_websocket import ConnectionClosed, HandshakeError
 from trio_websocket import open_websocket_url
 
@@ -47,15 +47,14 @@ async def run_bus(send_channel, server_address, route, bus_id):
                 try:
                     async with open_websocket_url(server_address) as ws:
                         async with send_channel:
-                            #helpers.broadcast_logger.info(f'{serialized_bus_info}')
-                            if 'busId' in serialized_bus_info:  # Connection success
+                            if 'busId' in serialized_bus_info:  # good connect
                                 helpers.conn_attempt = 0
                             await ws.send_message(serialized_bus_info)
                         await trio.sleep(_settings.refresh_timeout)
                     first_run = False
                 except (OSError, HandshakeError) as e:
                     first_run = True
-                    helpers.broadcast_logger.info(f'Connection failed: {e}')
+                    helpers.broadcast_logger.info(f'Connection failed: {e=}')
 
 
 def relaunch_on_disconnect(async_function):
@@ -105,7 +104,7 @@ async def start_buses():
                 bus_id = f'{all_buses} / {route["name"]}'
 
                 nursery.start_soon(run_bus, send_channel, server_address, route, bus_id)
-                helpers.broadcast_logger.info(f'{bus_id=}')
+                helpers.broadcast_logger.info(f'{_settings.emulator_id}{bus_id}')
 
         nursery.start_soon(send_updates, server_address, receive_channel)
 
@@ -113,21 +112,23 @@ async def start_buses():
 
 
 def get_args_parser():
+    settings = load_settings()
+    print(settings['SERVER'])
     parser = argparse.ArgumentParser(formatter_class=
                                      argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-server', default=settings.SERVER)
+    parser.add_argument('-server', default=settings['SERVER'])
     parser.add_argument('-routes_number', type=int,
-                        default=settings.ROUTES_NUMBER)
+                        default=settings['ROUTES_NUMBER'])
     parser.add_argument('-buses_per_route', type=int,
-                        default=settings.BUSES_PER_ROUTE)
+                        default=settings['BUSES_PER_ROUTE'])
     parser.add_argument('-websockets_number', type=int,
-                        default=settings.WEBSOCKETS_NUMBER)
+                        default=settings['WEBSOCKETS_NUMBER'])
     parser.add_argument('-emulator_id',
-                        default=settings.EMULATOR_ID)
-    parser.add_argument('-refresh_timeout', type=int,
-                        default=settings.REFRESH_TIMEOUT)
+                        default=settings['EMULATOR_ID'])
+    parser.add_argument('-refresh_timeout', type=float,
+                        default=settings['REFRESH_TIMEOUT'])
     parser.add_argument('-v', action='store_true',
-                        default=settings.V, help='info logs on')
+                        default=settings['V'], help='info logs on')
     return parser
 
 
@@ -139,4 +140,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    with suppress(KeyboardInterrupt):
+        main()

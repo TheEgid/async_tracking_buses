@@ -2,6 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 import jsonschema
+import configparser
 
 
 BUSES = {}
@@ -60,3 +61,9 @@ def validate_input_json_data(json_data, json_schema):
     except jsonschema.exceptions.ValidationError:
         return None
     return json_data
+
+
+def load_settings():
+    config = configparser.ConfigParser()
+    config.read('settings.ini')
+    return config['main_settings']

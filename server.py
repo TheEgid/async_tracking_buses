@@ -1,11 +1,12 @@
 import json
 import trio
+from contextlib import suppress
 from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
 from helpers import Bus, WindowBounds, install_logs_parameters
-from helpers import validate_input_json_data, get_json_schema
+from helpers import validate_input_json_data, get_json_schema, load_settings
 import helpers
-import settings
+
 
 
 async def output_to_browser(ws):
@@ -45,7 +46,7 @@ async def listen_browser(ws):
             bounds = WindowBounds(**bounds["data"])
             if bounds:
                 helpers.windows_bounds = bounds
-            await trio.sleep(settings.REFRESH_TIMEOUT)
+            await trio.sleep(1)
         except (ConnectionClosed, ConnectionRejected):
             break
 
@@ -54,7 +55,7 @@ async def talk_to_browser(ws):
     while True:
         try:
             await output_to_browser(ws)
-            await trio.sleep(settings.REFRESH_TIMEOUT)           # helpers.PAUSE_DUR
+            await trio.sleep(float(settings['REFRESH_TIMEOUT']))
         except (ConnectionClosed, ConnectionRejected):
             break
 
@@ -72,6 +73,8 @@ async def handle_server(request):
 
 
 async def main():
+    global settings
+    settings = load_settings()
     helpers.json_schema = get_json_schema()
     helpers.server_logger = install_logs_parameters(True)
 
@@ -83,5 +86,7 @@ async def main():
 
 
 if __name__ == '__main__':
-    trio.run(main)
+    with suppress(KeyboardInterrupt):
+        trio.run(main)
+
 
