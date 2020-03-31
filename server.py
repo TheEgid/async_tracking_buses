@@ -4,7 +4,6 @@ from contextlib import suppress
 from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
 
-from harmful_bus import ValidationError
 from harmful_bus import validate_bus_id_json, validate_bounds_json
 from helpers import Bus, WindowBounds, install_logs_parameters
 from helpers import load_settings
@@ -45,10 +44,10 @@ async def listen_browser(ws):
             raw_bounds = await ws.get_message()
             bounds = validate_bounds_json(json.loads(raw_bounds))
             if 'errors' in bounds:
-                helpers.server_logger.info(bounds)
+                helpers.server_logger.info(**bounds['errors'])
             helpers.windows_bounds = WindowBounds(**bounds["data"])
             await trio.sleep(1)
-        except (ConnectionClosed, ConnectionRejected, ValidationError):
+        except (ConnectionClosed, ConnectionRejected):
             break
 
 
@@ -68,10 +67,10 @@ async def handle_server(request):
             raw_response = await ws.get_message()
             input_bus_info = validate_bus_id_json(json.loads(raw_response))
             if 'errors' in input_bus_info:
-                helpers.server_logger.info(input_bus_info)
+                helpers.server_logger.info(input_bus_info['errors'])
             bus = Bus(**input_bus_info)
             helpers.BUSES.update({bus.busId: bus})
-        except (ConnectionClosed, ConnectionRejected, ValidationError):
+        except (ConnectionClosed, ConnectionRejected):
             break
 
 
@@ -90,5 +89,3 @@ async def main():
 if __name__ == '__main__':
     with suppress(KeyboardInterrupt):
         trio.run(main)
-
-

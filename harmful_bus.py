@@ -3,11 +3,6 @@ import jsonschema
 import unittest
 
 
-class ValidationError(Exception):
-    """Declare special exception."""
-    pass
-
-
 def get_json_schema(filepath):
     """https://jsonschema.net/home"""
     with open(filepath, 'r') as f:
@@ -26,7 +21,7 @@ def validate_bounds_json(json_data):
     try:
         jsonschema.validate(json_data, json_schema)
     except jsonschema.exceptions.ValidationError:
-        raise ValidationError(json.loads(error_msg))
+        return json.loads(error_msg)
     return json_data
 
 
@@ -41,44 +36,45 @@ def validate_bus_id_json(json_data):
     try:
         jsonschema.validate(json_data, json_schema)
     except jsonschema.exceptions.ValidationError:
-        raise ValidationError(json.loads(error_msg))
+        return json.loads(error_msg)
     return json_data
 
 
-bad_bus_id_data = json.dumps(
-    {
-        "busId": "",
-        "lat": 55.591238932907,
-        "lng": 37.664172757715,
-        "route": 162
-    },
-    ensure_ascii=False)
-
-
-bad_bounds_data = json.dumps(
-    {
-        "msgType": "newBounds",
-        "data":
-            {"south_lat": '55.75460588316582',
-             "north_lat": 55.78844965172979,
-             "west_lng": 37.42655754089356,
-             "east_lng": 37.55839347839356}
-    },
-    ensure_ascii=False)
-
-
 class BasicTests(unittest.TestCase):
-    def test_validate_bounds_json_exception(self):
-        with self.assertRaises(ValidationError):
-            validate_bounds_json(json.loads(bad_bounds_data))
 
-    def test_validate_bus_id_json_exception(self):
-        with self.assertRaises(ValidationError):
-            validate_bus_id_json(json.loads(bad_bus_id_data))
+    @classmethod
+    def setUpClass(cls):
+        cls.bad_bounds_data = json.dumps(
+            {
+                "msgType": "newBounds",
+                "data":
+                    {"south_lat": '55.75460588316582',
+                     "north_lat": 55.78844965172979,
+                     "west_lng": 37.42655754089356,
+                     "east_lng": 37.55839347839356}
+            },
+            ensure_ascii=False)
 
+        cls.bad_bus_id_data = json.dumps(
+            {
+                "busId": "",
+                "lat": 55.591238932907,
+                "lng": 37.664172757715,
+                "route": 162
+            },
+            ensure_ascii=False)
 
-            # input_bus_info = validate_bus_id_json(json.loads(raw_response))
-            # if 'errors' in input_bus_info:
+    def test_validate_bounds_json(self):
+        result = validate_bounds_json(json.loads(self.bad_bus_id_data))
+        self.assertTrue('errors' in result)
+        self.assertEqual(['Requires valid JSON'],
+                         dict(result)['errors'])
+
+    def test_validate_bus_id_json(self):
+        result = validate_bus_id_json(json.loads(self.bad_bus_id_data))
+        self.assertTrue('errors' in result)
+        self.assertEqual(['Requires busId specified'],
+                         dict(result)['errors'])
 
 
 if __name__ == '__main__':
@@ -86,5 +82,3 @@ if __name__ == '__main__':
     myTestSuite.addTest(unittest.makeSuite(BasicTests))
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(myTestSuite)
-
-

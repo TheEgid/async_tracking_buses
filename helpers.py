@@ -1,4 +1,3 @@
-import json
 import logging
 from dataclasses import dataclass
 import configparser
@@ -45,9 +44,6 @@ def install_logs_parameters(logs=False):
     logging.basicConfig(format=str_format, datefmt=date_format, level=level)
     broadcast_logger = logging.getLogger()
     return broadcast_logger
-
-
-
 
 
 def load_settings():
