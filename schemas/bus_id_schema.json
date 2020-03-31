@@ -1,0 +1,50 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "The Root Schema",
+    "required": [
+        "busId",
+        "lat",
+        "lng",
+        "route"
+    ],
+    "properties": {
+        "busId": {
+            "$id": "#/properties/busId",
+            "type": "string",
+            "title": "The Busid Schema",
+            "default": "",
+            "examples": [
+                "r162|id140|162|o144"
+            ]
+        },
+        "lat": {
+            "$id": "#/properties/lat",
+            "type": "number",
+            "title": "The Lat Schema",
+            "default": 0,
+            "examples": [
+                55.591238932907
+            ]
+        },
+        "lng": {
+            "$id": "#/properties/lng",
+            "type": "number",
+            "title": "The Lng Schema",
+            "default": 0,
+            "examples": [
+                37.664172757715
+            ]
+        },
+        "route": {
+            "$id": "#/properties/route",
+            "type": "string",
+            "title": "The Route Schema",
+            "default": "",
+            "examples": [
+                "162"
+            ]
+        }
+    }
+}

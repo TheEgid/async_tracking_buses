@@ -19,7 +19,7 @@ def get_serialized_bus_info(route, bus_id):
     # endless cycle with offset
     route_chain = itertools.chain(coordinates[start_offset:],
                                   coordinates[::-1])
-    bus_id = f"r{route['name']}/id{bus_id}/o{start_offset}"
+    bus_id = f"r{route['name']}|id{bus_id}|o{start_offset}"
     for bus_coordinate in itertools.cycle(route_chain):
         lat, lng = bus_coordinate
         yield json.dumps({"busId": bus_id,
@@ -101,7 +101,7 @@ async def start_buses():
 
             for bus in range(_settings.buses_per_route):
                 all_buses += 1
-                bus_id = f'{all_buses} / {route["name"]}'
+                bus_id = f'{all_buses}|{route["name"]}'
 
                 nursery.start_soon(run_bus, send_channel, server_address, route, bus_id)
                 helpers.broadcast_logger.info(f'{_settings.emulator_id}{bus_id}')
