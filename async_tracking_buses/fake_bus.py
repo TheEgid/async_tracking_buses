@@ -67,13 +67,12 @@ def relaunch_on_disconnect(async_function):
             try:
                 await async_function(*args)
             except (Exception, trio.MultiError) as err:
-                if isinstance(err, HandshakeError) or \
-                        isinstance(err, ConnectionClosed) \
-                        or isinstance(err, OSError):
+                #raise(err)
+                if isinstance(err, ConnectionClosed) or isinstance(err, HandshakeError):
                     helpers.conn_attempt += 1
                     helpers.broadcast_logger.info(f'Relaunch on disconnect: '
                                                   f'{helpers.conn_attempt=}')
-                if helpers.conn_attempt > 4:
+                if helpers.conn_attempt > 24:
                     helpers.broadcast_logger.info(f'Connection failed')
                     break
             await trio.sleep(_settings.refresh_timeout)
@@ -113,9 +112,7 @@ async def start_buses():
         await trio.sleep(0)
 
 
-def get_args_parser():
-    settings = load_settings()
-    print(settings['SERVER'])
+def get_args_parser(settings):
     parser = argparse.ArgumentParser(formatter_class=
                                      argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-server', default=settings['SERVER'])
@@ -134,13 +131,15 @@ def get_args_parser():
     return parser
 
 
-def main():
+async def main():
+    settings = await load_settings('settings.ini')
     global _settings
-    _settings = get_args_parser().parse_args()
+    _settings = get_args_parser(settings).parse_args()
     helpers.broadcast_logger = install_logs_parameters(_settings.v)
-    trio.run(start_buses)
+    async with trio.open_nursery() as nursery:
+        nursery.start_soon(start_buses)
 
 
 if __name__ == '__main__':
     with suppress(KeyboardInterrupt):
-        main()
+        trio.run(main)

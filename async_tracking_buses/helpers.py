@@ -1,8 +1,7 @@
 import logging
 from dataclasses import dataclass
 import configparser
-import aiofiles
-import os
+import asyncio
 
 
 BUSES = {}
@@ -48,17 +47,10 @@ def install_logs_parameters(logs=False):
     return broadcast_logger
 
 
-def load_settings():
+async def load_settings(ini_file):
     config = configparser.ConfigParser()
-    config.read('settings.ini')
-    return config['main_settings']
-
-
-async def load_log_from_file(log_path, log_filename='history.txt'):
-    log_file = os.path.join(log_path, log_filename)
-    log = []
-    if os.path.exists(log_file):
-        async with aiofiles.open(log_file, encoding="utf-8") as f:
-            async for data in f:
-                log.append(data)
-    return log
+    if not config.read(ini_file):
+        print(f'Unable to read {ini_file}')
+        exit(1)
+    settings = config['main_settings']
+    return settings

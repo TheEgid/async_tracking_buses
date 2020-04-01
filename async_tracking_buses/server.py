@@ -76,9 +76,8 @@ async def handle_server(request):
 
 async def main():
     global settings
-    settings = load_settings()
+    settings = await load_settings('settings.ini')
     helpers.server_logger = install_logs_parameters(True)
-
     async with trio.open_nursery() as nursery:
         nursery.start_soon(serve_websocket, handle_server,
                            '127.0.0.1', 8080, None)
