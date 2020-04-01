@@ -2,3 +2,4 @@ trio_websocket==0.8.0
 trio==0.13.0
 jsonschema==3.2.0
 configparser==5.0.0
+aiofiles==0.4.0

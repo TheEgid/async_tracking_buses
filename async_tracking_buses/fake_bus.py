@@ -13,7 +13,7 @@ from trio_websocket import ConnectionClosed, HandshakeError
 from trio_websocket import open_websocket_url
 
 
-def get_serialized_bus_info(route, bus_id):
+async def get_serialized_bus_info(route, bus_id):
     coordinates = route['coordinates']
     start_offset = coordinates.index(random.choice(list(coordinates)))
     # endless cycle with offset
@@ -29,7 +29,7 @@ def get_serialized_bus_info(route, bus_id):
                          ensure_ascii=False)
 
 
-def load_routes(directory_path='routes'):
+async def load_routes(directory_path='routes'):
     all_routes = os.listdir(directory_path)
     chosen_routes = all_routes[:_settings.routes_number]
     for filename in chosen_routes:
@@ -43,7 +43,7 @@ async def run_bus(send_channel, server_address, route, bus_id):
     first_run = True
     while True:
         if first_run:
-            for serialized_bus_info in get_serialized_bus_info(route, bus_id):
+            async for serialized_bus_info in get_serialized_bus_info(route, bus_id):
                 try:
                     async with open_websocket_url(server_address) as ws:
                         async with send_channel:
@@ -52,9 +52,11 @@ async def run_bus(send_channel, server_address, route, bus_id):
                             await ws.send_message(serialized_bus_info)
                         await trio.sleep(_settings.refresh_timeout)
                     first_run = False
-                except (OSError, HandshakeError) as e:
+                except OSError as e:
                     first_run = True
                     helpers.broadcast_logger.info(f'Connection failed: {e=}')
+                except HandshakeError:
+                    pass
 
 
 def relaunch_on_disconnect(async_function):
@@ -95,7 +97,7 @@ async def start_buses():
 
     async with trio.open_nursery() as nursery:
 
-        for route in load_routes():
+        async for route in load_routes():
             for websocket in range(_settings.websockets_number):
                 send_channel, receive_channel = random.choice(all_channels)
 
