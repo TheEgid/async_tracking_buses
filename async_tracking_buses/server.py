@@ -4,7 +4,8 @@ from contextlib import suppress
 from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
 
-from harmful_bus import validate_bus_id_json, validate_bounds_json
+from harmful_bus import bus_id_json_schema, bounds_json_schema, \
+    validate_bus_id_json, validate_bounds_json
 from helpers import Bus, WindowBounds, install_logs_parameters
 from helpers import load_settings
 import helpers
@@ -42,7 +43,8 @@ async def listen_browser(ws):
     while True:
         try:
             raw_bounds = await ws.get_message()
-            bounds = validate_bounds_json(json.loads(raw_bounds))
+            bounds = await validate_bounds_json(
+                json.loads(raw_bounds), bounds_json_schema)
             if 'errors' in bounds:
                 helpers.server_logger.info(**bounds['errors'])
             helpers.windows_bounds = WindowBounds(**bounds["data"])
@@ -65,7 +67,8 @@ async def handle_server(request):
     while True:
         try:
             raw_response = await ws.get_message()
-            input_bus_info = validate_bus_id_json(json.loads(raw_response))
+            input_bus_info = await validate_bus_id_json(
+                json.loads(raw_response), bus_id_json_schema)
             if 'errors' in input_bus_info:
                 helpers.server_logger.info(input_bus_info['errors'])
             bus = Bus(**input_bus_info)

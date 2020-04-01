@@ -1,7 +1,8 @@
 import logging
 from dataclasses import dataclass
 import configparser
-import asyncio
+import os
+import json
 
 
 BUSES = {}
@@ -54,3 +55,13 @@ async def load_settings(ini_file):
         exit(1)
     settings = config['main_settings']
     return settings
+
+
+def get_json_schema(filepath):
+    """https://jsonschema.net/home"""
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            schema_data = f.read()
+            return json.loads(schema_data)
+    else:
+        raise FileNotFoundError(f'{filepath} not found')

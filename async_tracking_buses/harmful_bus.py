@@ -1,53 +1,40 @@
 import json
 import jsonschema
 import unittest
-from aiofile import AIOFile
 import warnings
-import os
 import pytest
 
-
-async def get_json_schema(filepath):
-    """https://jsonschema.net/home"""
-    schema_data = []
-    if os.path.exists(filepath):
-        async with AIOFile(filepath, "r") as afp:
-            data = await afp.read()
-            schema_data.append(data)
-    return json.loads(''.join(schema_data))
-
-# def get_json_schema(filepath):
-#     """https://jsonschema.net/home"""
-#     with open(filepath, 'r') as f:
-#         schema_data = f.read()
-#         return json.loads(schema_data)
+from helpers import get_json_schema
 
 
-async def validate_bounds_json(json_data):
+bus_id_json_schema = get_json_schema('schemas/bus_id_schema.json')
+bounds_json_schema = get_json_schema('schemas/bounds_schema.json')
+
+
+async def validate_bounds_json(json_data, bounds_schema_json):
     error_msg = json.dumps(
         {
             "errors": ["Requires valid JSON"],
             "msgType": "Errors"
         },
         ensure_ascii=False)
-    json_schema = await get_json_schema('schemas/bounds_schema.json')
+
     try:
-        jsonschema.validate(json_data, json_schema)
+        jsonschema.validate(json_data, bounds_schema_json)
     except jsonschema.exceptions.ValidationError:
         return json.loads(error_msg)
     return json_data
 
 
-async def validate_bus_id_json(json_data):
+async def validate_bus_id_json(json_data, bus_id_schema_json):
     error_msg = json.dumps(
         {
             "errors": ["Requires busId specified"],
             "msgType": "Errors"
         },
         ensure_ascii=False)
-    json_schema = await get_json_schema('schemas/bus_id_schema.json')
     try:
-        jsonschema.validate(json_data, json_schema)
+        jsonschema.validate(json_data, bus_id_schema_json)
     except jsonschema.exceptions.ValidationError:
         return json.loads(error_msg)
     return json_data
@@ -79,14 +66,16 @@ class BasicTests(unittest.TestCase):
 
     @pytest.mark.asyncio
     async def test_validate_bounds_json(self):
-        result = await validate_bounds_json(json.loads(self.bad_bus_id_data))
+        result = await validate_bounds_json(
+            json.loads(self.bad_bus_id_data), bounds_json_schema)
         self.assertTrue('errors' in result)
         self.assertEqual(['Requires valid JSON'],
                          dict(result)['errors'])
 
     @pytest.mark.asyncio
     async def test_validate_bus_id_json(self):
-        result = await validate_bus_id_json(json.loads(self.bad_bus_id_data))
+        result = await validate_bus_id_json(
+            json.loads(self.bad_bus_id_data), bus_id_json_schema)
         self.assertTrue('errors' in result)
         self.assertEqual(['Requires busId specified'],
                          dict(result)['errors'])
