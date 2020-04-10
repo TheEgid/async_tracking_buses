@@ -1,16 +1,12 @@
 import logging
 from dataclasses import dataclass
-import configparser
 import os
 import json
 
 
 BUSES = {}
 windows_bounds = None
-
 conn_attempt = 0
-broadcast_logger = None
-server_logger = None
 
 
 @dataclass
@@ -37,31 +33,25 @@ class Bus:
     route: str
 
 
-def install_logs_parameters(logs=False):
-    level = logging.CRITICAL
-    if logs:
-        level = logging.INFO
+def configure_logs_parameters():
+    level = logging.INFO
     str_format = '%(asctime)s\t %(filename)s %(message)s'
     date_format = '%d-%b-%y %H:%M:%S'
     logging.basicConfig(format=str_format, datefmt=date_format, level=level)
-    broadcast_logger = logging.getLogger()
-    return broadcast_logger
-
-
-async def load_settings(ini_file):
-    config = configparser.ConfigParser()
-    if not config.read(ini_file):
-        print(f'Unable to read {ini_file}')
-        exit(1)
-    settings = config['main_settings']
-    return settings
+    logger = logging.getLogger()
+    return logger
 
 
 def get_json_schema(filepath):
-    """https://jsonschema.net/home"""
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
-            schema_data = f.read()
-            return json.loads(schema_data)
-    else:
+    """Receipt JSON Schema object
+        Args:
+            filepath (str): JSON schema filepath made with
+            https://jsonschema.net Web application that generates JSON schema.
+        Returns:
+            Deserialized JSON object
+    """
+    if not os.path.exists(filepath):
         raise FileNotFoundError(f'{filepath} not found')
+    with open(filepath, 'r') as f:
+        schema_data = f.read()
+        return json.loads(schema_data)
