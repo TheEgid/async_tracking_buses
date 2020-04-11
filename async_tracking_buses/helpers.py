@@ -1,4 +1,5 @@
 import logging
+import time
 from dataclasses import dataclass
 import os
 import json
@@ -31,6 +32,13 @@ class Bus:
     lat: float
     lng: float
     route: str
+
+
+class BusesOnBoundsFilter(logging.Filter):
+    def filter(self, record):
+        frequency = 3
+        time_local = time.localtime(record.created).tm_sec
+        return time_local % frequency == 0
 
 
 def configure_logs_parameters():

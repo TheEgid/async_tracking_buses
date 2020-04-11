@@ -4,7 +4,7 @@ from os import getenv
 from dotenv import load_dotenv
 import asyncclick as click
 from contextlib import suppress
-from trio_websocket import ConnectionClosed, ConnectionRejected, _impl
+from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
 
 from harmful_bus import bus_id_json_schema, bounds_json_schema, \
@@ -18,6 +18,7 @@ server_logger = configure_logs_parameters()
 
 async def output_to_browser(ws):
     outputed_buses = set()
+    server_logger.addFilter(helpers.BusesOnBoundsFilter())
     try:
         buses_is_inside = \
             [bus for bus_id, bus in helpers.BUSES.items() if
@@ -32,16 +33,9 @@ async def output_to_browser(ws):
 
         server_logger.info(f'buses on bounds: {len(outputed_buses)}')
         await ws.send_message(json.dumps(output_buses_info))
-        await trio.sleep(settings['refresh_timeout'])
+
     except (KeyError, AttributeError):
         pass
-
-
-async def handle_browser(request):
-    ws = await request.accept()
-    async with trio.open_nursery() as nursery:
-        nursery.start_soon(listen_browser, ws)
-        nursery.start_soon(talk_to_browser, ws)
 
 
 async def listen_browser(ws):
@@ -55,6 +49,7 @@ async def listen_browser(ws):
             helpers.windows_bounds = WindowBounds(**bounds["data"])
             await trio.sleep(1)
         except (ConnectionClosed, ConnectionRejected):
+            await trio.sleep(1)
             break
 
 
@@ -67,15 +62,24 @@ async def talk_to_browser(ws):
             break
 
 
-async def handle_server(request):
+async def handle_browser(request):
+    ws = await request.accept()
+    async with trio.open_nursery() as nursery:
+        nursery.start_soon(listen_browser, ws)
+        nursery.start_soon(talk_to_browser, ws)
+
+
+async def handle_buses_routes(request):
     ws = await request.accept()
     while True:
         try:
             raw_response = await ws.get_message()
             input_bus_info = await validate_bus_id_json(
                 json.loads(raw_response), bus_id_json_schema)
+
             if 'errors' in input_bus_info:
                 server_logger.info(input_bus_info['errors'])
+
             bus = Bus(**input_bus_info)
             helpers.BUSES.update({bus.busId: bus})
         except (ConnectionClosed, ConnectionRejected):
@@ -83,11 +87,6 @@ async def handle_server(request):
 
 
 @click.command(load_dotenv())
-@click.option('-server', type=str, default=getenv("SERVER"))
-@click.option('-routes_number', type=int, default=getenv("ROUTES_NUMBER"))
-@click.option('-buses_per_route', type=int, default=getenv("BUSES_PER_ROUTE"))
-@click.option('-websockets_number', type=int, default=getenv("WEBSOCKETS_NUMBER"))
-@click.option('-emulator_id', type=str, default=getenv("EMULATOR_ID"))
 @click.option('-refresh_timeout', type=float, default=getenv("REFRESH_TIMEOUT"))
 @click.option('-logs', type=bool, default=getenv("V"))
 async def main(**args):
@@ -97,7 +96,7 @@ async def main(**args):
     if not settings['logs']:
         server_logger.disabled = True
     async with trio.open_nursery() as nursery:
-        nursery.start_soon(serve_websocket, handle_server,
+        nursery.start_soon(serve_websocket, handle_buses_routes,
                            '127.0.0.1', 8080, None)
         nursery.start_soon(serve_websocket, handle_browser,
                            '127.0.0.1', 8000, None)

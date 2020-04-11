@@ -18,12 +18,13 @@ pip install -r requirements.txt
 
 Открываем в браузере файл index.html
 
-В параллельных терминалах (например через менеджер терминалов [TMUX](https://habr.com/ru/post/126996/) запускаем - 
+Параллельно запускаем -
+
 ```
 python fake_bus.py
 ```
 ```
-python fake_bus.py
+python server.py
 ```
 
 ## Настройки
@@ -54,8 +55,8 @@ python fake_bus.py
 
 Фронтенд ожидает получить от сервера JSON сообщение со списком автобусов:
 
-```js
-{msgType: 'Buses',
+```JS
+{'Buses',
   buses: [
     {
       busId: 'c790сс', lat: 55.7500, lng: 37.600, route: '120',
@@ -64,7 +65,7 @@ python fake_bus.py
       busId: 'a134aa', lat: 55.7494, lng: 37.621, route: '670к',
     },
   ],
-};
+}
 ```
 
 Те автобусы, что не попали в список `buses` последнего сообщения от сервера будут удалены с карты.
