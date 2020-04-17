@@ -1,8 +1,8 @@
-import logging
 import time
 from dataclasses import dataclass
 import os
 import json
+import logging
 
 
 BUSES = {}
@@ -36,18 +36,10 @@ class Bus:
 
 class BusesOnBoundsFilter(logging.Filter):
     def filter(self, record):
-        frequency = 3
+        frequency = 5
         time_local = time.localtime(record.created).tm_sec
         return time_local % frequency == 0
 
-
-def configure_logs_parameters():
-    level = logging.INFO
-    str_format = '%(asctime)s\t %(filename)s %(message)s'
-    date_format = '%d-%b-%y %H:%M:%S'
-    logging.basicConfig(format=str_format, datefmt=date_format, level=level)
-    logger = logging.getLogger()
-    return logger
 
 
 def get_json_schema(filepath):
@@ -61,5 +53,5 @@ def get_json_schema(filepath):
     if not os.path.exists(filepath):
         raise FileNotFoundError(f'{filepath} not found')
     with open(filepath, 'r') as f:
-        schema_data = f.read()
-        return json.loads(schema_data)
+        schema = f.read()
+        return json.loads(schema)

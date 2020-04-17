@@ -8,17 +8,17 @@ from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
 
 from harmful_bus import bus_id_json_schema, bounds_json_schema, \
-    validate_bus_id_json, validate_bounds_json
-from helpers import Bus, WindowBounds, configure_logs_parameters
+    validate_bus_id, validate_bounds
+from helpers import Bus, WindowBounds, BusesOnBoundsFilter
 import helpers
+import logging
 
 
-server_logger = configure_logs_parameters()
+logger = logging.getLogger(__file__)
 
 
 async def output_to_browser(ws):
     outputed_buses = set()
-    server_logger.addFilter(helpers.BusesOnBoundsFilter())
     try:
         buses_is_inside = \
             [bus for bus_id, bus in helpers.BUSES.items() if
@@ -31,7 +31,7 @@ async def output_to_browser(ws):
 
         [outputed_buses.add(bus.busId) for bus in buses_is_inside]
 
-        server_logger.info(f'buses on bounds: {len(outputed_buses)}')
+        logger.info(f'buses on bounds: {len(outputed_buses)}')
         await ws.send_message(json.dumps(output_buses_info))
 
     except (KeyError, AttributeError):
@@ -42,14 +42,13 @@ async def listen_browser(ws):
     while True:
         try:
             raw_bounds = await ws.get_message()
-            bounds = await validate_bounds_json(
+            bounds = await validate_bounds(
                 json.loads(raw_bounds), bounds_json_schema)
             if 'errors' in bounds:
-                server_logger.info(**bounds['errors'])
+                logger.error(list(bounds.get('errors')))
             helpers.windows_bounds = WindowBounds(**bounds["data"])
             await trio.sleep(1)
         except (ConnectionClosed, ConnectionRejected):
-            await trio.sleep(1)
             break
 
 
@@ -74,12 +73,10 @@ async def handle_buses_routes(request):
     while True:
         try:
             raw_response = await ws.get_message()
-            input_bus_info = await validate_bus_id_json(
+            input_bus_info = await validate_bus_id(
                 json.loads(raw_response), bus_id_json_schema)
-
             if 'errors' in input_bus_info:
-                server_logger.info(input_bus_info['errors'])
-
+                logger.error(list(input_bus_info.get('errors')))
             bus = Bus(**input_bus_info)
             helpers.BUSES.update({bus.busId: bus})
         except (ConnectionClosed, ConnectionRejected):
@@ -93,8 +90,11 @@ async def main(**args):
     global settings
     settings = args
     _refresh_timeout = 0
+    logging.basicConfig(format='%(asctime)s\t %(filename)s %(message)s',
+                        datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
+    logger.addFilter(BusesOnBoundsFilter())
     if not settings['logs']:
-        server_logger.disabled = True
+        logger.disabled = True
     async with trio.open_nursery() as nursery:
         nursery.start_soon(serve_websocket, handle_buses_routes,
                            '127.0.0.1', 8080, None)

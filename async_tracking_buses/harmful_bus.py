@@ -11,22 +11,21 @@ bus_id_json_schema = get_json_schema('schemas/bus_id_schema.json')
 bounds_json_schema = get_json_schema('schemas/bounds_schema.json')
 
 
-async def validate_bounds_json(json_data, bounds_schema_json):
+async def validate_bounds(bounds, bounds_schema_json):
     error_msg = json.dumps(
         {
             "errors": ["Requires valid JSON"],
             "msgType": "Errors"
         },
         ensure_ascii=False)
-
     try:
-        jsonschema.validate(json_data, bounds_schema_json)
+        jsonschema.validate(bounds, bounds_schema_json)
     except jsonschema.exceptions.ValidationError:
         return json.loads(error_msg)
-    return json_data
+    return bounds
 
 
-async def validate_bus_id_json(json_data, bus_id_schema_json):
+async def validate_bus_id(bus_id, bus_id_schema_json):
     error_msg = json.dumps(
         {
             "errors": ["Requires busId specified"],
@@ -34,10 +33,10 @@ async def validate_bus_id_json(json_data, bus_id_schema_json):
         },
         ensure_ascii=False)
     try:
-        jsonschema.validate(json_data, bus_id_schema_json)
+        jsonschema.validate(bus_id, bus_id_schema_json)
     except jsonschema.exceptions.ValidationError:
         return json.loads(error_msg)
-    return json_data
+    return bus_id
 
 
 class BasicTests(unittest.TestCase):
@@ -55,7 +54,7 @@ class BasicTests(unittest.TestCase):
             },
             ensure_ascii=False)
 
-        cls.bad_bus_id_data = json.dumps(
+        cls.bad_bus_id = json.dumps(
             {
                 "busId": "",
                 "lat": 55.591238932907,
@@ -66,19 +65,19 @@ class BasicTests(unittest.TestCase):
 
     @pytest.mark.asyncio
     async def test_validate_bounds_json(self):
-        result = await validate_bounds_json(
-            json.loads(self.bad_bus_id_data), bounds_json_schema)
+        result = await validate_bounds(json.loads(self.bad_bus_id),
+                                       bounds_json_schema)
         self.assertTrue('errors' in result)
         self.assertEqual(['Requires valid JSON'],
-                         dict(result)['errors'])
+                         list(result.get('errors')))
 
     @pytest.mark.asyncio
     async def test_validate_bus_id_json(self):
-        result = await validate_bus_id_json(
-            json.loads(self.bad_bus_id_data), bus_id_json_schema)
+        result = await validate_bus_id(json.loads(self.bad_bus_id),
+                                       bus_id_json_schema)
         self.assertTrue('errors' in result)
         self.assertEqual(['Requires busId specified'],
-                         dict(result)['errors'])
+                         list(result.get('errors')))
 
 
 if __name__ == '__main__':

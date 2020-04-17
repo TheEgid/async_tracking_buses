@@ -8,14 +8,14 @@ from contextlib import suppress
 from os import getenv
 from dotenv import load_dotenv
 import asyncclick as click
-
-import helpers
-from helpers import configure_logs_parameters
+import logging
 from trio_websocket import ConnectionClosed, HandshakeError
 from trio_websocket import open_websocket_url
 
+import helpers
 
-broadcast_logger = configure_logs_parameters()
+
+logger = logging.getLogger(__file__)
 
 
 async def get_serialized_bus_info(route, bus_id):
@@ -60,7 +60,7 @@ async def run_bus(send_channel, server_address, route, bus_id):
                     first_run = False
                 except OSError as e:
                     first_run = True
-                    broadcast_logger.info(f'Connection failed: {e=}')
+                    logger.error(f'Connection failed: {e=}')
                 except HandshakeError:
                     pass
 
@@ -76,10 +76,10 @@ def relaunch_on_disconnect(async_function):
                 if isinstance(err, ConnectionClosed) or \
                         isinstance(err, HandshakeError):
                     helpers.conn_attempt += 1
-                    broadcast_logger.info(f'Relaunch on disconnect: '
+                    logger.error(f'Relaunch on disconnect: '
                                           f'{helpers.conn_attempt=}')
                 if helpers.conn_attempt > 24:
-                    broadcast_logger.info(f'Connection failed')
+                    logger.error(f'Connection failed')
                     break
             await trio.sleep(settings['refresh_timeout'])
     return wrapper
@@ -109,7 +109,7 @@ async def start_buses():
                 bus_id = f'{all_buses}|{route["name"]}'
                 nursery.start_soon(run_bus, send_channel, server_address, route,
                                    bus_id)
-                broadcast_logger.info(f"{settings['emulator_id']}{bus_id}")
+                logger.info(f"{settings['emulator_id']}{bus_id}")
 
         nursery.start_soon(send_updates, server_address, receive_channel)
         await trio.sleep(0)
@@ -127,8 +127,10 @@ async def start_buses():
 async def main(**args):
     global settings
     settings = args
+    logging.basicConfig(format='%(asctime)s\t %(filename)s %(message)s',
+                        datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
     if not settings['logs']:
-        broadcast_logger.disabled = True
+        logger.disabled = True
     async with trio.open_nursery() as nursery:
         nursery.start_soon(start_buses)
 
