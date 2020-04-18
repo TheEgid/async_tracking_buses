@@ -41,9 +41,9 @@ class BusesOnBoundsFilter(logging.Filter):
         return time_local % frequency == 0
 
 
-
 def get_json_schema(filepath):
-    """Receipt JSON Schema object
+    """Receipt JSON Schema object.
+
         Args:
             filepath (str): JSON schema filepath made with
             https://jsonschema.net Web application that generates JSON schema.

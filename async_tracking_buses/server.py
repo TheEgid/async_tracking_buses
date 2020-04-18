@@ -18,20 +18,22 @@ logger = logging.getLogger(__file__)
 
 
 async def output_to_browser(ws):
-    outputed_buses = set()
     try:
         buses_is_inside = \
             [bus for bus_id, bus in helpers.BUSES.items() if
              helpers.windows_bounds.is_inside(bus.lat, bus.lng)]
-
-        output_buses_info = {"msgType": "Buses", "buses": [
-            {"busId": bus.busId, "lat": bus.lat, "lng": bus.lng,
-             "route": bus.route}
-            for bus in buses_is_inside]}
-
-        [outputed_buses.add(bus.busId) for bus in buses_is_inside]
-
-        logger.info(f'buses on bounds: {len(outputed_buses)}')
+        output_buses_info = {
+            "msgType": "Buses",
+            "buses": [
+                {
+                    "busId": bus.busId,
+                    "lat": bus.lat,
+                    "lng": bus.lng,
+                    "route": bus.route
+                }
+                for bus in buses_is_inside]
+        }
+        logger.info(f'buses on bounds: {len(buses_is_inside)}')
         await ws.send_message(json.dumps(output_buses_info))
 
     except (KeyError, AttributeError):

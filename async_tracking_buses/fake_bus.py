@@ -128,7 +128,7 @@ async def start_buses():
               help='amount of sockets', show_default=True)
 @click.option('-e', '--emulator_id', type=str, default=getenv("EMULATOR_ID"),
               help='text prefix id bus emulation', show_default=True)
-@click.option('-r', '--refresh_timeout',
+@click.option('-r', '--refresh_timeout', type=float,
               default=getenv("REFRESH_TIMEOUT"),
               help='refresh in seconds', show_default=True)
 @click.option('-l', '--logs', type=bool, default=getenv("V"),
