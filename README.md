@@ -23,9 +23,9 @@ pip install -r requirements.txt
 - `ROUTES_NUMBER` - количество маршрутов автобусов
 - `BUSES_PER_ROUTE` - количество автобусов на одном маршруте
 - `WEBSOCKETS_NUMBER` - количество задействованных вебсокетов
-- `EMULATOR_ID` префикс айди автобуса, пример `е`
-- `REFRESH_TIMEOUT` - таймайт обновлений (в секундах)
-- `V` - вывод логов в консоль, пример `True`
+- `EMULATOR_ID` префикс айди автобуса, например `е`
+- `REFRESH_TIMEOUT` - таймаут обновлений (в секундах)
+- `V` - вывод логов в консоль, например `True`
 
 ## Запуск
 
@@ -43,7 +43,7 @@ python server.py
 
 **Usage: fake_bus.py [OPTIONS]**
 
-`Options:`
+- `Options:`
 
 `  -s, --server TEXT               server address  [default: ws://127.0.0.1:8080/ws]`
 
@@ -64,7 +64,7 @@ python server.py
 
 **Usage: server.py [OPTIONS]**
 
-`Options:`
+- `Options:`
 
 `  -r, --refresh_timeout FLOAT     refresh in seconds  [default: 0.1]`
 
