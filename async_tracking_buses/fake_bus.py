@@ -77,7 +77,7 @@ def relaunch_on_disconnect(async_function):
                         isinstance(err, HandshakeError):
                     helpers.conn_attempt += 1
                     logger.error(f'Relaunch on disconnect: '
-                                          f'{helpers.conn_attempt=}')
+                                 f'{helpers.conn_attempt=}')
                 if helpers.conn_attempt > 24:
                     logger.error(f'Connection failed')
                     break
@@ -116,14 +116,23 @@ async def start_buses():
 
 
 @click.command(load_dotenv())
-@click.option('-server', type=str, default=getenv("SERVER"))
-@click.option('-routes_number', type=int, default=getenv("ROUTES_NUMBER"))
-@click.option('-buses_per_route', type=int, default=getenv("BUSES_PER_ROUTE"))
-@click.option('-websockets_number', type=int,
-              default=getenv("WEBSOCKETS_NUMBER"))
-@click.option('-emulator_id', type=str, default=getenv("EMULATOR_ID"))
-@click.option('-refresh_timeout', type=float, default=getenv("REFRESH_TIMEOUT"))
-@click.option('-logs', type=bool, default=getenv("V"))
+@click.option('-s', '--server', type=str, default=getenv("SERVER"),
+              help='server address', show_default=True)
+@click.option('-r', '--routes_number', type=int, default=getenv("ROUTES_NUMBER"),
+              help='amount of routes', show_default=True)
+@click.option('-b', '--buses_per_route', type=int,
+              default=getenv("BUSES_PER_ROUTE"),
+              help='amount of buses on the 1 route', show_default=True)
+@click.option('-w', '--websockets_number', type=int,
+              default=getenv("WEBSOCKETS_NUMBER"),
+              help='amount of sockets', show_default=True)
+@click.option('-e', '--emulator_id', type=str, default=getenv("EMULATOR_ID"),
+              help='text prefix id bus emulation', show_default=True)
+@click.option('-r', '--refresh_timeout',
+              default=getenv("REFRESH_TIMEOUT"),
+              help='refresh in seconds', show_default=True)
+@click.option('-l', '--logs', type=bool, default=getenv("V"),
+              help='enable logging', show_default=True)
 async def main(**args):
     global settings
     settings = args

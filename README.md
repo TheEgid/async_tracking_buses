@@ -14,32 +14,9 @@ Python>=3.8.0 должен быть уже установлен. Для уста
 pip install -r requirements.txt
 ```
 
-## Как запустить
-
-Открываем в браузере файл index.html
-
-Параллельно запускаем -
-
-```
-python fake_bus.py
-```
-```
-python server.py
-```
-
-## Настройки
-
-Внизу справа на странице можно включить отладочный режим логгирования и указать нестандартный адрес веб-сокета.
-
-<img src="screenshots/settings.png">
-
-Настройки сохраняются в Local Storage браузера и не пропадают после обновления страницы. Чтобы сбросить настройки удалите ключи из Local Storage с помощью Chrome Dev Tools —> Вкладка Application —> Local Storage.
-
-Если что-то работает не так, как ожидалось, то начните с включения отладочного режима логгирования.
-
 ## Переменные окружения
 
-Часть настроек проекта берётся из переменных окружения. Чтобы их определить, создайте файл `.env` рядом с `helpers.py` и запишите туда данные в таком формате: `ПЕРЕМЕННАЯ=значение`.
+Настройки берутся из переменных окружения. Чтобы их определить, создайте файл `.env` рядом с `helpers.py` и запишите туда данные в таком формате: `ПЕРЕМЕННАЯ=значение`.
 Доступны 7 переменных:
 
 - `SERVER` - адрес сервера вебсокетов, пример `ws://127.0.0.1:8080/ws`
@@ -49,6 +26,49 @@ python server.py
 - `EMULATOR_ID` префикс айди автобуса, пример `е`
 - `REFRESH_TIMEOUT` - таймайт обновлений (в секундах)
 - `V` - вывод логов в консоль, пример `True`
+
+## Запуск
+
+Открываем в браузере файл index.html
+Параллельно запускаем -
+
+```
+python fake_bus.py
+```
+```
+python server.py
+```
+
+## Запуск с аргументами, аргументы имеют параметры по умолчанию из .env файла.
+
+Usage: fake_bus.py [OPTIONS]
+Options:
+  -s, --server TEXT               server address  [default: ws://127.0.0.1:8080/ws]
+  -r, --routes_number INTEGER     amount of routes  [default: 70]
+  -b, --buses_per_route INTEGER   amount of buses on the 1 route  [default: 2]
+  -w, --websockets_number INTEGER amount of sockets  [default: 10]
+  -e, --emulator_id TEXT          text prefix id bus emulation  [default: e]
+  -r, --refresh_timeout TEXT      refresh in seconds  [default: 0.1]
+  -l, --logs BOOLEAN              enable logging  [default: True]
+  --help                          Show this message and exit.
+
+
+Usage: server.py [OPTIONS]
+Options:
+  -r, --refresh_timeout FLOAT     refresh in seconds  [default: 0.1]
+  -l, --logs BOOLEAN              enable logging  [default: True]
+  --help                          Show this message and exit.
+
+
+## Настройки в браузере
+
+Внизу справа на странице можно включить отладочный режим логгирования и указать нестандартный адрес веб-сокета.
+
+<img src="screenshots/settings.png">
+
+Настройки сохраняются в Local Storage браузера и не пропадают после обновления страницы. Чтобы сбросить настройки удалите ключи из Local Storage с помощью Chrome Dev Tools —> Вкладка Application —> Local Storage.
+
+Если что-то работает не так, как ожидалось, то начните с включения отладочного режима логгирования.
 
 
 ## Формат данных

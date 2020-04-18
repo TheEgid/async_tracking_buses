@@ -1,8 +1,8 @@
-import time
 from dataclasses import dataclass
 import os
 import json
 import logging
+import time
 
 
 BUSES = {}

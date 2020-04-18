@@ -84,8 +84,11 @@ async def handle_buses_routes(request):
 
 
 @click.command(load_dotenv())
-@click.option('-refresh_timeout', type=float, default=getenv("REFRESH_TIMEOUT"))
-@click.option('-logs', type=bool, default=getenv("V"))
+@click.option('-r', '--refresh_timeout', type=float,
+              default=getenv("REFRESH_TIMEOUT"),
+              help='refresh in seconds', show_default=True)
+@click.option('-l', '--logs', type=bool, default=getenv("V"),
+              help='enable logging', show_default=True)
 async def main(**args):
     global settings
     settings = args
