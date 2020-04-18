@@ -4,7 +4,7 @@ import json
 import trio
 import os
 import random
-from contextlib import suppress
+import contextlib
 from os import getenv
 from dotenv import load_dotenv
 import asyncclick as click
@@ -145,5 +145,5 @@ async def main(**args):
 
 
 if __name__ == '__main__':
-    with suppress(KeyboardInterrupt):
+    with contextlib.suppress(KeyboardInterrupt):
         main(_anyio_backend="trio")

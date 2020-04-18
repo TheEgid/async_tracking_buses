@@ -3,7 +3,7 @@ import trio
 from os import getenv
 from dotenv import load_dotenv
 import asyncclick as click
-from contextlib import suppress
+import contextlib
 from trio_websocket import ConnectionClosed, ConnectionRejected
 from trio_websocket import serve_websocket
 
@@ -18,10 +18,9 @@ logger = logging.getLogger(__file__)
 
 
 async def output_to_browser(ws):
-    try:
-        buses_is_inside = \
-            [bus for bus_id, bus in helpers.BUSES.items() if
-             helpers.windows_bounds.is_inside(bus.lat, bus.lng)]
+    with contextlib.suppress(KeyError, AttributeError):
+        buses_is_inside = [bus for bus_id, bus in helpers.BUSES.items() if
+                           helpers.windows_bounds.is_inside(bus.lat, bus.lng)]
         output_buses_info = {
             "msgType": "Buses",
             "buses": [
@@ -36,31 +35,23 @@ async def output_to_browser(ws):
         logger.info(f'buses on bounds: {len(buses_is_inside)}')
         await ws.send_message(json.dumps(output_buses_info))
 
-    except (KeyError, AttributeError):
-        pass
-
 
 async def listen_browser(ws):
     while True:
-        try:
+        with contextlib.suppress(ConnectionClosed, ConnectionRejected):
             raw_bounds = await ws.get_message()
             bounds = await validate_bounds(
                 json.loads(raw_bounds), bounds_json_schema)
             if 'errors' in bounds:
                 logger.error(list(bounds.get('errors')))
             helpers.windows_bounds = WindowBounds(**bounds["data"])
-            await trio.sleep(1)
-        except (ConnectionClosed, ConnectionRejected):
-            break
 
 
 async def talk_to_browser(ws):
     while True:
-        try:
+        with contextlib.suppress(ConnectionClosed, ConnectionRejected):
             await output_to_browser(ws)
             await trio.sleep(settings['refresh_timeout'])
-        except (ConnectionClosed, ConnectionRejected):
-            break
 
 
 async def handle_browser(request):
@@ -108,5 +99,5 @@ async def main(**args):
 
 
 if __name__ == '__main__':
-    with suppress(KeyboardInterrupt):
+    with contextlib.suppress(KeyboardInterrupt):
         main(_anyio_backend="trio")

@@ -42,21 +42,34 @@ python server.py
 ## Запуск с аргументами, аргументы имеют параметры по умолчанию из .env файла.
 
 **Usage: fake_bus.py [OPTIONS]**
+
 `Options:`
+
 `  -s, --server TEXT               server address  [default: ws://127.0.0.1:8080/ws]`
+
 `  -r, --routes_number INTEGER     amount of routes  [default: 70]`
+
 `  -b, --buses_per_route INTEGER   amount of buses on the 1 route  [default: 2]`
+
 `  -w, --websockets_number INTEGER amount of sockets  [default: 10]`
+
 `  -e, --emulator_id TEXT          text prefix id bus emulation  [default: e]`
+
 `  -r, --refresh_timeout FLOAT     refresh in seconds  [default: 0.1]`
+
 `  -l, --logs BOOLEAN              enable logging  [default: True]`
+
 `  --help                          Show this message and exit.`
 
 
 **Usage: server.py [OPTIONS]**
+
 `Options:`
+
 `  -r, --refresh_timeout FLOAT     refresh in seconds  [default: 0.1]`
+
 `  -l, --logs BOOLEAN              enable logging  [default: True]`
+
 `  --help                          Show this message and exit.`
 
 
