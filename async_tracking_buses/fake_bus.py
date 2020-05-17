@@ -131,7 +131,7 @@ async def start_buses():
 @click.option('-r', '--refresh_timeout', type=float,
               default=getenv("REFRESH_TIMEOUT"),
               help='refresh in seconds', show_default=True)
-@click.option('-l', '--logs', type=bool, default=getenv("V"),
+@click.option('-l', '--logs', type=bool, default=getenv("LOGS"),
               help='enable logging', show_default=True)
 async def main(**args):
     global settings

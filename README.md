@@ -25,7 +25,9 @@ pip install -r requirements.txt
 - `WEBSOCKETS_NUMBER` - количество задействованных вебсокетов
 - `EMULATOR_ID` префикс айди автобуса, например `е`
 - `REFRESH_TIMEOUT` - таймаут обновлений (в секундах)
-- `V` - вывод логов в консоль, например `True`
+- `LOGS` - вывод всех логов в консоль, например `True`
+- `BUS_LOGS` - вывод логов в консоль от автобусов на линии, например `True`
+
 
 ## Запуск
 
@@ -69,6 +71,8 @@ python server.py
 `  -r, --refresh_timeout FLOAT     refresh in seconds  [default: 0.1]`
 
 `  -l, --logs BOOLEAN              enable logging  [default: True]`
+
+`  -b, --buses_logs BOOLEAN        enable buses on boards logging  [default: True]`
 
 `  --help                          Show this message and exit.`
 

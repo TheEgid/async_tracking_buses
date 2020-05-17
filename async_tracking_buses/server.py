@@ -1,5 +1,6 @@
 import json
 import trio
+import logging
 from os import getenv
 from dotenv import load_dotenv
 import asyncclick as click
@@ -11,7 +12,6 @@ from harmful_bus import bus_id_json_schema, bounds_json_schema, \
     validate_bus_id, validate_bounds
 from helpers import Bus, WindowBounds, BusesOnBoundsFilter
 import helpers
-import logging
 
 
 logger = logging.getLogger(__file__)
@@ -37,13 +37,15 @@ async def output_to_browser(ws):
 
 
 async def listen_browser(ws):
-    while True:
-        with contextlib.suppress(ConnectionClosed, ConnectionRejected):
+    with contextlib.suppress(ConnectionClosed,
+                             ConnectionRejected, json.JSONDecodeError):
+        while True:
             raw_bounds = await ws.get_message()
             bounds = await validate_bounds(
                 json.loads(raw_bounds), bounds_json_schema)
             if 'errors' in bounds:
-                logger.error(list(bounds.get('errors')))
+                await ws.send_message(bounds)
+                logger.error(str(bounds))
             helpers.windows_bounds = WindowBounds(**bounds["data"])
 
 
@@ -63,34 +65,37 @@ async def handle_browser(request):
 
 async def handle_buses_routes(request):
     ws = await request.accept()
-    while True:
-        try:
+    with contextlib.suppress(ConnectionClosed,
+                             ConnectionRejected, json.JSONDecodeError):
+        while True:
             raw_response = await ws.get_message()
             input_bus_info = await validate_bus_id(
                 json.loads(raw_response), bus_id_json_schema)
             if 'errors' in input_bus_info:
-                logger.error(list(input_bus_info.get('errors')))
+                await ws.send_message(input_bus_info)
+                logger.error(str(input_bus_info))
             bus = Bus(**input_bus_info)
             helpers.BUSES.update({bus.busId: bus})
-        except (ConnectionClosed, ConnectionRejected):
-            break
 
 
 @click.command(load_dotenv())
 @click.option('-r', '--refresh_timeout', type=float,
               default=getenv("REFRESH_TIMEOUT"),
               help='refresh in seconds', show_default=True)
-@click.option('-l', '--logs', type=bool, default=getenv("V"),
+@click.option('-l', '--logs', type=bool, default=getenv("LOGS"),
               help='enable logging', show_default=True)
+@click.option('-b', '--buses_logs', type=bool, default=getenv("BUS_LOGS"),
+              help='enable buses on boards logging', show_default=True)
 async def main(**args):
     global settings
     settings = args
     _refresh_timeout = 0
     logging.basicConfig(format='%(asctime)s\t %(filename)s %(message)s',
                         datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
-    logger.addFilter(BusesOnBoundsFilter())
-    if not settings['logs']:
-        logger.disabled = True
+    if settings['logs']:
+        logger.disabled = False
+    if settings['buses_logs']:
+        logger.addFilter(BusesOnBoundsFilter())
     async with trio.open_nursery() as nursery:
         nursery.start_soon(serve_websocket, handle_buses_routes,
                            '127.0.0.1', 8080, None)

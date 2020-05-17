@@ -1,7 +1,5 @@
 import json
 import jsonschema
-import unittest
-import warnings
 import pytest
 
 from helpers import get_json_schema
@@ -21,7 +19,7 @@ async def validate_bounds(bounds, bounds_schema_json):
     try:
         jsonschema.validate(bounds, bounds_schema_json)
     except jsonschema.exceptions.ValidationError:
-        return json.loads(error_msg)
+        return error_msg
     return bounds
 
 
@@ -35,15 +33,13 @@ async def validate_bus_id(bus_id, bus_id_schema_json):
     try:
         jsonschema.validate(bus_id, bus_id_schema_json)
     except jsonschema.exceptions.ValidationError:
-        return json.loads(error_msg)
+        return error_msg
     return bus_id
 
 
-class BasicTests(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.bad_bounds_data = json.dumps(
+@pytest.fixture(scope="class")
+def bad_bounds(request):
+        yield json.dumps(
             {
                 "msgType": "newBounds",
                 "data":
@@ -54,7 +50,10 @@ class BasicTests(unittest.TestCase):
             },
             ensure_ascii=False)
 
-        cls.bad_bus_id = json.dumps(
+
+@pytest.fixture(scope="class")
+def bad_bus_id(request):
+        yield json.dumps(
             {
                 "busId": "",
                 "lat": 55.591238932907,
@@ -63,26 +62,27 @@ class BasicTests(unittest.TestCase):
             },
             ensure_ascii=False)
 
-    @pytest.mark.asyncio
-    async def test_validate_bounds_json(self):
-        result = await validate_bounds(json.loads(self.bad_bus_id),
-                                       bounds_json_schema)
-        self.assertTrue('errors' in result)
-        self.assertEqual(['Requires valid JSON'],
-                         list(result.get('errors')))
+
+class TestBusData:
 
     @pytest.mark.asyncio
-    async def test_validate_bus_id_json(self):
-        result = await validate_bus_id(json.loads(self.bad_bus_id),
-                                       bus_id_json_schema)
-        self.assertTrue('errors' in result)
-        self.assertEqual(['Requires busId specified'],
-                         list(result.get('errors')))
+    @pytest.mark.usefixtures("bad_bounds")
+    async def test_validate_bounds_json(self, bad_bounds):
+        _result = await validate_bounds(json.loads(bad_bounds),
+                                        bounds_json_schema)
+        result = json.loads(_result)
+        assert isinstance(result, dict)
+        assert result['errors'] == ['Requires valid JSON']
+
+    @pytest.mark.asyncio
+    @pytest.mark.usefixtures("bad_bus_id")
+    async def test_validate_bus_id_json(self, bad_bus_id):
+        _result = await validate_bus_id(json.loads(bad_bus_id),
+                                        bus_id_json_schema)
+        result = json.loads(_result)
+        assert isinstance(result, dict)
+        assert result['errors'] == ['Requires busId specified']
 
 
 if __name__ == '__main__':
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=DeprecationWarning)
-        myTestSuite = unittest.TestSuite()
-        myTestSuite.addTest(unittest.makeSuite(BasicTests))
-        runner = unittest.TextTestRunner(verbosity=2)
+    pytest.main([__file__, '--capture=sys', '--tb=line', '-v'])
